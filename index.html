@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DiLA: Disentangled Latent Action World Models</title>
+    <meta
+      name="description"
+      content="DiLA is a disentangled latent action world model that learns abstract, transferable latent actions from unlabeled videos while preserving generation fidelity."
+    >
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [["\\(", "\\)"], ["$", "$"]] },
+        svg: { fontCache: "global" }
+      };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar" aria-label="Site navigation">
+      <a class="brand" href="#top">DiLA</a>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#analysis">Analysis</a>
+        <a href="#visual-planning">Planning</a>
+        <a href="#citation">Citation</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="title">
+        <div class="hero-media" aria-hidden="true">
+          <img src="assets/action-transfer.png" alt="">
+        </div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="eyebrow">Latent Action Models · World Models · Disentangled Representation Learning</p>
+          <div class="venue-badge">ICML 2026</div>
+          <h1 id="title"><span>DiLA</span>: Disentangled Latent Action World Models</h1>
+          <p class="subtitle">
+            Learning abstract, reusable latent actions from unlabeled videos while preserving
+            high-fidelity world-model predictions through content-structure disentanglement.
+          </p>
+          <p class="authors">
+            <a href="https://ztqakita.github.io/">Tianqiu Zhang</a><sup>*</sup>, Muyang Lyu<sup>*</sup>, Yufan Zhang, Fang Fang, Si Wu
+          </p>
+          <p class="affiliation">Peking University</p>
+          <div class="actions" aria-label="Project links">
+            <a class="button primary" href="assets/paper.pdf">Paper</a>
+            <span class="button disabled" aria-disabled="true">Code (Coming Soon)</span>
+            <a class="button" href="#citation">BibTeX</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="abstract" class="section abstract-section">
+        <div class="section-heading centered compact-heading">
+          <h2>Abstract</h2>
+        </div>
+        <p class="abstract-text">
+          Latent Action Models learn world models from unlabeled video by inferring abstract
+          actions between frames, but they often face a trade-off between action abstraction and
+          generation fidelity. DiLA resolves this tension through content-structure disentanglement:
+          the predictive bottleneck drives motion-relevant spatial layout into a structure pathway,
+          while a separate content pathway preserves appearance and scene details for generation.
+          This co-evolution yields continuous, semantically structured latent actions that transfer
+          across embodiments, support interpretable manifold analysis, and improve downstream
+          visual planning.
+        </p>
+      </section>
+
+      <section id="overview" class="section intro-section">
+        <div class="section-heading">
+          <p class="eyebrow">Overview</p>
+          <h2>Resolving the LAM trade-off</h2>
+        </div>
+        <div class="intro-grid">
+          <div class="intro-copy">
+            <p>
+              Latent Action Models infer action-like variables directly from unlabeled videos, avoiding
+              the need for expensive action-labeled data. Yet existing LAMs face a persistent tension:
+              strong bottlenecks encourage abstract and transferable actions, while weaker bottlenecks
+              preserve generation quality but often entangle actions with visual appearance.
+            </p>
+            <p>
+              DiLA reframes this tension as a disentanglement problem. It separates video features into
+              a structure pathway that captures dynamics-relevant spatial layouts and a content pathway
+              that stores appearance, texture, and slowly revealed scene details. The predictive
+              bottleneck in latent action learning drives structure-content separation, and that
+              separation makes the latent actions more abstract.
+            </p>
+          </div>
+          <figure class="figure intro-figure">
+            <img src="assets/intro.png" alt="Diagram showing co-evolution between latent action learning and disentanglement.">
+            <figcaption>
+              Co-evolution of latent actions and disentanglement: a restricted predictive bottleneck
+              encourages structure to shed appearance and focus on motion.
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="claims">
+          <article>
+            <span>01</span>
+            <h3>Unified LAM and world model</h3>
+            <p>DiLA learns latent actions and future dynamics end-to-end from observation sequences.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Content-structure disentanglement</h3>
+            <p>The structure pathway models motion, while the content pathway preserves visual details for generation.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Transferable action manifolds</h3>
+            <p>Continuous latent actions support cross-embodiment transfer, visual planning, and interpretable analysis.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="method" class="section">
+        <div class="section-heading centered">
+          <p class="eyebrow">Method</p>
+          <h2>Two pathways, one predictive loop</h2>
+          <p>
+            DiLA predicts in the latent feature space: DINOv2 extracts visual embeddings, the structure
+            pathway learns abstract latent actions, the content pathway maintains memory, and a fusion
+            decoder recombines both streams for future-frame embedding prediction.
+          </p>
+        </div>
+        <figure class="figure wide">
+          <img src="assets/model.png" alt="Architecture diagram of DiLA.">
+          <figcaption>
+            Architecture of DiLA. The structure pathway learns abstract latent actions under a bottleneck,
+            while the Mamba-based content pathway preserves historical appearance context.
+          </figcaption>
+        </figure>
+
+        <div class="method-grid">
+          <article>
+            <h3>Structure Pathway</h3>
+            <p>
+              A structure encoder compresses video tokens into spatial layouts. An inverse dynamics
+              model extracts latent actions from temporal differences, and a forward dynamics model
+              predicts the next structure state.
+            </p>
+          </article>
+          <article>
+            <h3>Content Pathway</h3>
+            <p>
+              A content encoder and Mamba memory aggregate temporally invariant visual information,
+              including occluded backgrounds and scene details that should not be stored in actions.
+            </p>
+          </article>
+          <article>
+            <h3>Fusion Decoder</h3>
+            <p>
+              A dual cross-attention decoder combines predicted structure, content memory, and the
+              initial visual embedding to reconstruct target DINOv2 embeddings.
+            </p>
+          </article>
+          <article>
+            <h3>Latent Rollouts</h3>
+            <p>
+              Rollouts are performed autoregressively in structure space, giving DiLA a compact
+              dynamics model for transfer and planning.
+            </p>
+          </article>
+        </div>
+
+        <div class="subsection-heading">
+          <p class="eyebrow">Core design of latent action space</p>
+        </div>
+        <div class="innovation-grid" aria-label="Core design of latent action space">
+          <article>
+            <span>01</span>
+            <h3>Latent action learning in DINOv2 space</h3>
+            <p>
+              DiLA predicts and rolls out dynamics in a compact DINOv2 latent space, avoiding
+              pixel-level reconstruction during training while preserving semantic visual structure.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Delta latent autoencoder</h3>
+            <p>
+              Latent actions are learned from temporal differences in structure embeddings,
+              forcing the action code to capture transition dynamics rather than static content.
+            </p>
+            <div class="formula">
+              \(\Delta \mathbf{s}_t = \mathbf{s}_{t+1} - \mathbf{s}_t,\quad
+              \mathbf{z}_t = \mathrm{IDM}(\Delta \mathbf{s}_t)\)
+            </div>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Inverse-transform symmetry</h3>
+            <p>
+              Forward and backward transitions are constrained to form opposite latent action
+              vectors, shaping a continuous and semantically meaningful action manifold.
+            </p>
+            <div class="formula">
+              \(\mathbf{z}^{\mathrm{bwd}}_t \approx -\mathbf{z}^{\mathrm{fwd}}_t\)
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="section results-section">
+        <div class="section-heading centered">
+          <p class="eyebrow">Results</p>
+          <h2>Transferable actions with high-fidelity prediction</h2>
+          <p>
+            The core experimental evidence is organized around action transfer and
+            content-structure disentanglement. Quantitative ablations are shown separately below.
+          </p>
+        </div>
+
+        <div class="result-pair">
+          <article class="result-card">
+            <p class="eyebrow">Action Transfer</p>
+            <h3>Latent actions transfer across embodiment and domain.</h3>
+            <p>
+              DiLA extracts latent actions from a source video and applies them to a target
+              context, including human-to-robot transfer, cross-object semantic transfer,
+              intra-domain transfer, and navigation transfer between virtual and real scenes.
+            </p>
+            <figure class="figure result-figure">
+              <img src="assets/action-transfer.png" alt="Action transfer examples across humans, robots, objects, and navigation scenes.">
+              <figcaption>
+                Cross-embodiment and navigation transfer show that latent actions capture
+                abstract dynamics rather than appearance-specific motion traces.
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="result-card">
+            <p class="eyebrow">Content-Structure Disentanglement</p>
+            <h3>Rebinding separates dynamics from appearance.</h3>
+            <p>
+              Structure from one sequence can be recombined with content from another. The output
+              follows the source spatial layout while inheriting reference appearance, texture,
+              and scene details.
+            </p>
+            <figure class="figure result-figure">
+              <img src="assets/disentangle.png" alt="Content and structure rebinding examples.">
+              <figcaption>
+                Rebinding and motion-isolation controls validate the intended structure/content
+                factorization.
+              </figcaption>
+            </figure>
+          </article>
+        </div>
+      </section>
+
+      <section id="ablation" class="section ablation-section">
+        <div class="section-heading centered">
+          <p class="eyebrow">Ablation</p>
+          <h2>Disentanglement is the key to the trade-off</h2>
+          <p>
+            Removing latent action learning or replacing DiLA's bottleneck weakens either
+            disentanglement, generation fidelity, or cycle-transfer robustness.
+          </p>
+        </div>
+
+        <div class="ablation-layout">
+          <figure class="figure ablation-figure">
+            <img src="assets/disentangle-ablation.png" alt="Ablation examples showing content leakage without latent action learning.">
+            <figcaption>
+              Without IDM and FDM, structure embeddings retain redundant content, and rebinding
+              produces texture leakage.
+            </figcaption>
+          </figure>
+          <section class="table-panel ablation-table" aria-labelledby="ablation-title">
+            <h3 id="ablation-title">Latent action ablations</h3>
+            <p>
+              Lower rollout and cycle-transfer LPIPS indicate stronger generation fidelity and
+              transferability.
+            </p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Model</th>
+                    <th>Rollouts↓</th>
+                    <th>Cycle transfer↓</th>
+                    <th>10k MSE↓</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>DiLA w/o content</td><td>0.344</td><td>0.451</td><td>0.249</td></tr>
+                  <tr><td>Discrete z</td><td>0.334</td><td>0.442</td><td>0.262</td></tr>
+                  <tr><td>Gaussian z</td><td>0.346</td><td>0.434</td><td>0.265</td></tr>
+                  <tr class="highlight"><td>DiLA</td><td>0.263</td><td>0.343</td><td>0.216</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="analysis" class="section analysis-section">
+        <div class="section-heading centered">
+          <p class="eyebrow">Analysis</p>
+          <h2>Interpretable latent action manifolds</h2>
+          <p>
+            On controlled and out-of-distribution settings, DiLA's continuous action space
+            aligns with physical transformation parameters and downstream control signals.
+          </p>
+        </div>
+
+        <figure class="figure analysis-figure">
+          <img src="assets/analysis.png" alt="UMAP and decoding analysis of latent action manifolds.">
+          <figcaption>
+            UMAP projections reveal continuous manifolds for translation, scaling, rotation,
+            compositional transformations, and navigation motion.
+          </figcaption>
+        </figure>
+        <div class="analysis-table-wrap">
+          <section class="table-panel" aria-labelledby="probe-title">
+            <h3 id="probe-title">OOD robotic linear probing</h3>
+            <p>Mean squared error on unseen robotic benchmarks.</p>
+            <div class="table-scroll">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Franka</th>
+                    <th>Block</th>
+                    <th>Push-T</th>
+                    <th>LIBERO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Discrete z</td><td>0.098</td><td>0.061</td><td>0.023</td><td>0.160</td></tr>
+                  <tr><td>Gaussian z</td><td>0.125</td><td>0.102</td><td>0.041</td><td>0.190</td></tr>
+                  <tr class="highlight"><td>DiLA</td><td>0.073</td><td>0.037</td><td>0.009</td><td>0.119</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="visual-planning" class="section planning-section">
+        <div class="section-heading centered">
+          <p class="eyebrow">Visual Planning</p>
+          <h2>Model Predictive Control with DiLA</h2>
+          <p>
+            After action adaptation, DiLA serves as the visual dynamics model for MPPI planning
+            and improves aggregate VP<sup>2</sup> success over AdaWorld.
+          </p>
+        </div>
+
+        <section class="table-panel planning-table" aria-labelledby="planning-title">
+          <h3 id="planning-title">VP<sup>2</sup> success rate</h3>
+          <p>
+            Average over 4 independent runs per task. Aggregate success is normalized relative
+            to the ground-truth simulator baseline.
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Robosuite push</th>
+                  <th>Open slide</th>
+                  <th>Blue button</th>
+                  <th>Green button</th>
+                  <th>Red button</th>
+                  <th>Upright block</th>
+                  <th>Aggregate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>AdaWorld</td><td>63.50</td><td>5.83</td><td>29.17</td><td>10.83</td><td>10.00</td><td>5.00</td><td>21.54</td></tr>
+                <tr class="highlight"><td>DiLA</td><td>68.00</td><td>15.00</td><td>78.33</td><td>35.83</td><td>20.83</td><td>3.33</td><td>41.44</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="citation" class="section citation-section">
+        <div class="section-heading">
+          <p class="eyebrow">Citation</p>
+          <h2>Use this BibTeX</h2>
+        </div>
+        <pre><code>@inproceedings{zhang2026dila,
+  title     = {{DiLA}: Disentangled Latent Action World Models},
+  author    = {Zhang, Tianqiu and Lyu, Muyang and Zhang, Yufan and Fang, Fang and Wu, Si},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
+  year      = {2026},
+  series    = {Proceedings of Machine Learning Research},
+  url       = {https://disentangled-latent-action-world-models.github.io}
+}</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p><sup>*</sup> Equal contribution. Correspondence: Si Wu, siwu@pku.edu.cn.</p>
+    </footer>
+  </body>
+</html>
