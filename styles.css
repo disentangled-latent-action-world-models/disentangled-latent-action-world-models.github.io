@@ -113,11 +113,11 @@ nav a:hover {
 }
 
 .eyebrow {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   color: var(--teal);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -244,8 +244,8 @@ h1 span {
 
 .section-heading h2 {
   margin: 0;
-  font-size: clamp(32px, 5vw, 58px);
-  line-height: 1.05;
+  font-size: clamp(30px, 4.1vw, 48px);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
